@@ -3,7 +3,9 @@ import {
     getAuth, 
     signInWithRedirect, 
     signInWithPopup, 
-    GoogleAuthProvider 
+    GoogleAuthProvider,
+    createUserWithEmailAndPassword, //added
+    FacebookAuthProvider //add for facebook authentication
 } from 'firebase/auth';
 import {
   getFirestore,
@@ -29,18 +31,26 @@ const firebaseConfig = {
 // Initialize Firebase
 const firebaseApp = initializeApp(firebaseConfig); //changed name
 
-const provider = new GoogleAuthProvider();
+const googleProvider = new GoogleAuthProvider();  //change variable to googleProvider
 
-provider.setCustomParameters({
+googleProvider.setCustomParameters({  //change variable to googleProvider
     prompt: "select_account"   //allways force users to select an account
 });
 
 export const auth = getAuth();
-export const signInWithGooglePopup = () => signInWithPopup(auth, provider);
+export const signInWithGooglePopup = () => signInWithPopup(auth, googleProvider);  //change variable to googleProvider
+
+//added to implement signInWithRedirect
+export const signInWithGoogleRedirect = () => signInWithRedirect(auth, googleProvider);  //change variable to googleProvider
 
 export const db = getFirestore();  //add database to pass auth
 
-export const createUserDocumentFromAuth = async(userAuth) => {
+export const createUserDocumentFromAuth = async(
+      userAuth, 
+      additionalInformation = {}
+    ) => {
+  if (!userAuth) return; //added
+
   const userDocRef = doc(db, 'users', userAuth.uid);   //check for existing document reference
 
   console.log(userDocRef);
@@ -60,7 +70,8 @@ export const createUserDocumentFromAuth = async(userAuth) => {
       await setDoc(userDocRef, {
         displayName,
         email,
-        createdAt
+        createdAt,
+        ...additionalInformation
       })
     } catch (error) {
       console.log('error creating the user', error.message);
@@ -72,4 +83,11 @@ export const createUserDocumentFromAuth = async(userAuth) => {
   //return userDocRef
   return userDocRef;
 
+};
+
+//added
+export const createAuthUserWithEmailAndPassword = async(email, password) => {
+  if (!email || !password) return;
+
+  return await createUserWithEmailAndPassword(auth, email, password);
 }
